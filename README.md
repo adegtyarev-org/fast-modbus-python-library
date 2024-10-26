@@ -96,12 +96,5 @@ print("Event configuration applied.")
 config_events.close()
 ```
 
-## Dependencies
-The primary dependencies for this library are:
-- `pymodbus`
-- `serial`
-
-Ensure all dependencies are listed in `requirements.txt` for a smooth installation.
-
 ## License
 This project is licensed under the MIT License.
