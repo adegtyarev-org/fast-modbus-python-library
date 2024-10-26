@@ -37,6 +37,8 @@ cd ./fast-modbus-python-library
 ```
 python -m examples.exsample_scan -d /dev/ttyACM0 -b 9600
 ```
+![image](https://github.com/user-attachments/assets/373503a4-6f26-424e-9704-50fe785c9fdf)
+
 
 #### Modbus Client Example
 
@@ -48,24 +50,29 @@ python -m examples.exsample_client -d /dev/ttyACM0 -b 9600 -s 4265607340 -c 3 -r
 python -m examples.exsample_client -d /dev/ttyACM0 -b 9600 -s 4265607340 -c 0x10 -r 128 -w 201
 
 ```
+![image](https://github.com/user-attachments/assets/11b5add6-54cc-43ea-a317-3e3f108940e8)
 
 #### Event Notifications Configuration Example
 
 ```
-python -m examples.exsample_config_events --device /dev/ttyACM0 --baud 9600 --slave_id 200 --config "discrete:0:2:1,discrete:4:3:0"
+python -m examples.exsample_config_events --device /dev/ttyACM0 --baud 9600 --slave_id 201 --config "discrete:0:2:1,discrete:4:3:0"
 ```
+![image](https://github.com/user-attachments/assets/842f1ea5-6b72-446f-9310-d0d56a949d67)
 
 #### Event Handling Example
 
 ```
 python -m examples.exsample_events -d /dev/ttyACM0 -b 9600
 ```
+![image](https://github.com/user-attachments/assets/fef68165-bc67-4616-8f8d-c8d9f8fd1f7c)
 
 ### Help on Parameters
 
 ```
 python -m examples.exsample_client --help
 ```
+![image](https://github.com/user-attachments/assets/6ca6ca34-e618-4862-9c51-79ab282f0f01)
+
 
 ## Module Descriptions
 
