@@ -1,18 +1,30 @@
-
 from setuptools import setup, find_packages
 
 setup(
-    name="FastModbusLibrary",
-    version="0.1.0",
-    description="Library for fast Modbus device communication, supporting scanning, event handling, and register operations.",
-    author="Your Name",
-    author_email="your.email@example.com",
+    name='fastmodbuslibrary',
+    version='0.1.0',
     packages=find_packages(),
-    install_requires=["pyserial"],  # Убедимся, что pyserial установлен для работы с Modbus
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
+    install_requires=[
+        'pyserial',
     ],
-    python_requires=">=3.6",
+    entry_points={
+        'console_scripts': [
+            'modbus_scan = fastmodbuslibrary.fast_modbus_scanner:main',
+            'modbus_events = fastmodbuslibrary.fast_modbus_events:main',
+            'modbus_config_events = fastmodbuslibrary.fast_modbus_config_events:main',
+            'modbus_client = fastmodbuslibrary.fast_modbus_client:main',
+        ],
+    },
+    author='Your Name',
+    author_email='your.email@example.com',
+    description='Modbus tools for Wirenboard devices',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
+    url='https://github.com/yourusername/fastmodbuslibrary',
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+    ],
+    python_requires='>=3.6',
 )
