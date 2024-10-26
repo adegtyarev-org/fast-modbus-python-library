@@ -5,6 +5,12 @@
 
 A library for working with Fast Modbus devices via a serial port (RS-485). It contains modules for configuring event notifications, scanning devices, and working with the Modbus client.
 
+## Features
+- **Device Scanning**: Detects Modbus devices on the network.
+- **Data Exchange**: Reads and writes Modbus registers for real-time device communication.
+- **Event Handling**: Requests and manages events from Modbus devices.
+- **Event Configuration**: Sets up event parameters on Modbus devices.
+
 ## Installation
 
 ### Install Dependencies
