@@ -6,6 +6,8 @@
 This library includes modules to scan for devices, read and write registers, manage events, and configure 
 event settings for Modbus-enabled devices.
 
+![image](https://github.com/user-attachments/assets/2bd8fab4-5f65-4814-b770-3ecbdfdfb142)
+
 ## Features
 - **Device Scanning**: Detects Modbus devices on the network.
 - **Data Exchange**: Reads and writes Modbus registers for real-time device communication.
