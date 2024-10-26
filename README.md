@@ -89,8 +89,9 @@ python -m examples.exsample_client --help
 ## Tests
 
 ### Running Tests
-
 ```
+cd ./fast-modbus-python-library
+
 python -m unittest discover tests
 ```
 
