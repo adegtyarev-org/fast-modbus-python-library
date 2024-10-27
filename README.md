@@ -1,7 +1,7 @@
 # Fast Modbus Library
 
 ## Description
-! This repository is not affiliated with and not supported by Wiren Board. Based on the scripts in the repository https://github.com/aadegtyarev/fast-modbus-python-tools
+! This repository is not affiliated with and not supported by Wiren Board.
 
 A library for working with Fast Modbus devices via a serial port (RS-485). It contains modules for configuring event notifications, scanning devices, and working with the Modbus client.
 
