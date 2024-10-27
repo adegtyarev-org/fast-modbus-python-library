@@ -60,11 +60,10 @@ python -m examples.example_config_events --device /dev/ttyACM0 --baud 9600 --sla
 ![image](https://github.com/user-attachments/assets/842f1ea5-6b72-446f-9310-d0d56a949d67)
 
 #### Event Handling Example
-!! While working with errors! Need help in debugging and correction.
 ```
 python -m examples.example_events -d /dev/ttyACM0 -b 9600
 ```
-![image](https://github.com/user-attachments/assets/671e598d-bffb-43ba-b73e-e3713c545651)
+![events](https://github.com/user-attachments/assets/7fa50724-2489-469e-8a8f-e6ae73760a56)
 
 
 ### Help on Parameters
