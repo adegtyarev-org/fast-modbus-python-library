@@ -64,7 +64,8 @@ python -m examples.example_config_events --device /dev/ttyACM0 --baud 9600 --sla
 ```
 python -m examples.example_events -d /dev/ttyACM0 -b 9600
 ```
-![image](https://github.com/user-attachments/assets/fef68165-bc67-4616-8f8d-c8d9f8fd1f7c)
+![image](https://github.com/user-attachments/assets/671e598d-bffb-43ba-b73e-e3713c545651)
+
 
 ### Help on Parameters
 
