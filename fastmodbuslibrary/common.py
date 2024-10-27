@@ -91,7 +91,7 @@ class ModbusCommon:
         Returns:
             str: The formatted string.
         """
-        return ' '.join(f"0x{byte:02X}" for byte in data)
+        return ' '.join(f"{byte:02X}" for byte in data)
 
     def send_command(self, command: bytes):
         """

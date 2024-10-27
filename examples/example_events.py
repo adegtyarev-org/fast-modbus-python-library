@@ -18,31 +18,44 @@ def parse_args():
     parser.add_argument('--debug', action='store_true', help="Enable debug output")
     return parser.parse_args()
 
-def print_events(events):
+def print_header():
     """
-    Display the received events in a formatted table.
+    Print the header for the event table and return the widths of the columns.
+
+    Returns:
+        list: A list of maximum widths for each column in the header.
+    """
+    header = ["Device ID", "Flag", "Event Type", "Event ID", "Event Payload"]
+    max_widths = [len(col) for col in header]
+
+    header_str = " | ".join(f"{col:<{max_widths[i]}}" for i, col in enumerate(header))
+    separator = "-" * len(header_str)
+
+    print(header_str)
+    print(separator)
+
+    return max_widths  # Return column widths for further use
+
+def print_events(events, device_id, flag, max_widths):
+    """
+    Print the events in a formatted table.
 
     Args:
-        events (list): A list of dictionaries containing event information.
+        events (list): A list of event dictionaries.
+        device_id (int): The device ID to display.
+        flag (int): The flag to display.
+        max_widths (list): A list of maximum widths for each column.
     """
-    if events:
-        # Define column widths based on the header
-        header = ["Device ID", "Event Count", "Flag", "Event Data Len", "Event Type", "Event Payload"]
-        max_widths = [len(col) for col in header]
-
-        # Format the header of the table
-        header_str = " | ".join(f"{col:<{max_widths[i]}}" for i, col in enumerate(header))
-        separator = "-" * len(header_str)
-
-        # Print the header only once
-        if not hasattr(print_events, "header_printed"):
-            print(header_str)
-            print(separator)
-            print_events.header_printed = True
-
-        # Format and print each row of the table
-        for event in events:
-            row = [str(event['device_id']), str(event['event_count']), str(event['flag']), str(event['event_data_len']), str(event['event_type']), str(event['event_payload'])]
+    # Print rows of the table
+    for event in events:
+        if isinstance(event, dict):  # Check if it is a dictionary
+            row = [
+                str(device_id),  # Use the provided device_id
+                str(flag),       # Use the provided flag
+                str(event['event_type']),
+                str(event['event_id']),
+                str(event['event_payload_value']),
+            ]
             row_str = " | ".join(f"{col:<{max_widths[i]}}" for i, col in enumerate(row))
             print(row_str)
 
@@ -50,42 +63,50 @@ def main():
     """
     Main function to execute the Fast Modbus Event Reader.
 
-    Parses command-line arguments, sets up logging, initializes the Modbus event reader,
+    It parses command-line arguments, sets up logging, initializes the Modbus event reader,
     and continuously requests and displays event notifications.
     """
     args = parse_args()
     setup_logging(args.debug)
     logger = logging.getLogger(__name__)
-    event_reader = None
+    event_reader = ModbusEventReader(args.device, args.baud)
 
     min_slave_id = 1
     max_data_length = 100
     slave_id = 0
     flag = 0
 
+    # Print the header once
+    max_widths = print_header()
+
     while True:
         try:
-            if event_reader is None:
-                event_reader = ModbusEventReader(args.device, args.baud)
+            response = event_reader.request_events(min_slave_id, max_data_length, slave_id, flag)
 
-            events = event_reader.request_events(min_slave_id, max_data_length, slave_id, flag)
-            print_events(events)
-            if events:
-                slave_id = events[0]["device_id"]
-                flag = events[0]["flag"]
+            if isinstance(response, dict):  # Check if the response is a dictionary
+                events = response.get('events', [])  # Extract the list of events from the dictionary
+                packet_info = response.get('packet_info', {})
+                device_id = packet_info.get('device_id', 0)  # Extract device_id or default to 0
+                flag = packet_info.get('flag', 0)              # Extract flag or default to 0
+
+                # Logic for updating slave_id and flag
+                if events:
+                    slave_id = device_id  # If there are events, take device_id from packet_info
+                else:
+                    slave_id = 0          # If there are no events, set slave_id to 0
+                    flag = 0              # If packet_info is empty, set flag to 0
+
+                print_events(events, slave_id, flag, max_widths)  # Pass slave_id and flag to the function
             else:
-                slave_id = 0
-                flag = 0
+                logger.error(f"Unexpected response: {response}")  # Log an error if it's not a dictionary
+
         except Exception as e:
             logger.error(f"Error: {e}")
             traceback.print_exc()
             print("An error occurred. Retrying...")
-            event_reader = None
+            event_reader = ModbusEventReader(args.device, args.baud)
 
         time.sleep(0.5)
-
-    if event_reader:
-        event_reader.serial_port.close()
 
 if __name__ == "__main__":
     main()
