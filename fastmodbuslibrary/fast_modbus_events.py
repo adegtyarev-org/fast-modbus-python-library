@@ -37,18 +37,14 @@ class ModbusEventReader(ModbusCommon):
         if len(response) < 7:
             return events
 
-        if len(response) < 12:
-            self.logger.error("Response too short to be valid")
-            return events
-
         device_id = response[0]
         command = response[1]
         subcommand = response[2]
         flag = response[3]
         event_count = response[4]
-        event_data_len = struct.unpack('>H', response[5:7])[0]  # event data length
-        event_type = struct.unpack('>H', response[7:9])[0]
-        event_payload = struct.unpack('>H', response[9:11])[0]
+        event_data_len = response[5]  # Исправлено: теперь это один байт
+        event_type = struct.unpack('>H', response[6:8])[0]  # Исправлено: теперь это два байта
+        event_payload = struct.unpack('>H', response[8:10])[0]  # Исправлено: теперь это два байта
 
         events.append({
             "device_id": device_id,
