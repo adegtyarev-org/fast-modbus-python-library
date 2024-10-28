@@ -32,7 +32,7 @@ jobs:
       id: version_check
       run: |
         # Извлечение версии из setup.py и сохранение для последующих шагов
-        version=$(python setup.py --version)
+        version=$(python setup.py --version | tr -d '[:space:]')
         echo "Version from setup.py is $version"
         echo "::set-output name=version::$version"
 
@@ -90,7 +90,7 @@ jobs:
     - name: Build Debian Package
       run: |
         # Сборка Debian пакета с использованием версии из setup.py
-        version=$(python setup.py --version)
+        version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
         # Предполагаем, что пакет будет называться debian_package_$version.deb
         # dpkg-deb --build my_package/ debian_package_${version}.deb
@@ -115,8 +115,6 @@ jobs:
         else
           version="v${{ needs.version-check.outputs.version }}"
         fi
-        # Удаление лишних пробелов в переменной version
-        version=$(echo "$version" | tr -d '[:space:]')
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag -a "$version" -m "Release $version"
