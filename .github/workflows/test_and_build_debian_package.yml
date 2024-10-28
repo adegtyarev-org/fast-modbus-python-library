@@ -55,8 +55,6 @@ jobs:
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
         fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
-
-        # Save package path to output
         echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
   release:
@@ -90,7 +88,7 @@ jobs:
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ steps.build_package.outputs.package_name }}
+        files: ${{ needs.test_and_build.outputs.package_name }}
         tag_name: ${{ steps.create_tag.outputs.tag }}
         name: Release ${{ steps.create_tag.outputs.tag }}
         draft: false
