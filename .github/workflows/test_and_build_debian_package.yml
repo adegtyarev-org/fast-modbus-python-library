@@ -42,10 +42,11 @@ jobs:
       run: pytest tests/
 
     - name: Build Debian Package
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
+        # dpkg-deb --build my_package/ debian_package_${version}.deb
         echo "::set-output name=package_name::debian_package_${version}.deb"
 
   release:
