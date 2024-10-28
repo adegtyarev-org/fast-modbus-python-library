@@ -1,0 +1,60 @@
+name: Test and Build Debian Package
+
+on:
+  pull_request:
+    branches:
+      - '**'  # Запуск при пуллреквестах из любой ветки
+
+jobs:
+  test_and_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Клонируем код
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      # Шаг 2: Устанавливаем Python и зависимости для тестов
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      # Шаг 3: Запускаем тесты
+      - name: Run Tests
+        run: |
+          pytest tests/
+
+      # Шаг 4: Устанавливаем зависимости для сборки (выполняется только если тесты успешны)
+      - name: Install build dependencies
+        if: success()
+        run: sudo apt-get update && sudo apt-get install -y build-essential debhelper python3-setuptools python3-pip
+
+      # Шаг 5: Собираем .deb пакет
+      - name: Build .deb package
+        if: success()
+        run: |
+          mkdir -p debian_package/DEBIAN
+          echo "Package: fastmodbuslibrary" > debian_package/DEBIAN/control
+          echo "Version: 1.0" >> debian_package/DEBIAN/control
+          echo "Architecture: all" >> debian_package/DEBIAN/control
+          echo "Maintainer: Your Name <you@example.com>" >> debian_package/DEBIAN/control
+          echo "Description: FastModbus library for Python" >> debian_package/DEBIAN/control
+
+          mkdir -p debian_package/usr/local/lib/python3.8/dist-packages
+          python3 -m pip install . --target=debian_package/usr/local/lib/python3.8/dist-packages
+
+          dpkg-deb --build debian_package
+
+      # Шаг 6: Загружаем артефакт с .deb пакетом
+      - name: Upload Debian artifact
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: debian-package
+          path: debian_package.deb
