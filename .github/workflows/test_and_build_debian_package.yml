@@ -33,6 +33,13 @@ jobs:
         # Install the package in editable mode to make modules accessible
         pip install -e .
 
+    - name: Get Version from setup.py
+      id: version_check
+      run: |
+        version=$(python setup.py --version | tr -d '[:space:]')
+        echo "Version is $version"
+        echo "::set-output name=version::$version"
+
     - name: Run Tests
       # Temporarily add current directory to PYTHONPATH for testing
       env:
@@ -63,11 +70,9 @@ jobs:
     - name: Build Debian Package
       id: build_package
       run: |
-        version=$(python setup.py --version | tr -d '[:space:]')
+        version=${{ needs.test.outputs.version }}
         echo "Building Debian package version $version..."
         fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
-
-        # Output the package name to use it in the release step
         echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
     - name: Create Git Tag
@@ -75,26 +80,26 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        version=${{ needs.test.outputs.version }}
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          version="prv${{ github.event.pull_request.number }}"
-          # Delete existing tag if it exists
-          git push --delete origin "$version" || true
-          git tag -d "$version" || true
+          tag="prv${{ github.event.pull_request.number }}-v${version}"
+          git push --delete origin "$tag" || true
+          git tag -d "$tag" || true
         else
-          version="v${{ needs.test.outputs.version }}"
+          tag="v${version}"
         fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag -a "$version" -m "Release $version"
-        git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$version" --force
-        echo "::set-output name=tag::$version"
+        git tag -a "$tag" -m "Release $tag"
+        git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$tag" --force
+        echo "::set-output name=tag::$tag"
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
         files: ${{ steps.build_package.outputs.package_name }}
         tag_name: ${{ steps.create_tag.outputs.tag }}
-        name: Release ${{ steps.create_tag.outputs.tag }}
+        name: "Release v${{ needs.test.outputs.version }}"
         draft: false
         prerelease: ${{ github.event_name == 'pull_request' }}
       env:
