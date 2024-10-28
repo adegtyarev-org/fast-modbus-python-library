@@ -3,11 +3,7 @@ name: Build and Release
 on:
   push:
     branches:
-      - main  # Запускается при пуше в ветку main
-
-  pull_request:
-    branches:
-      - '*'  # Запускается при создании pull request в любую ветку
+      - main  # Запускается только при пуше в ветку main
 
 jobs:
   # Job 1: Version Check
@@ -101,6 +97,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: build-package  # Зависимость от успешного завершения build-package
+    if: github.ref == 'refs/heads/main'  # Выполняется только при пуше в main
 
     steps:
     - name: Checkout repository
@@ -109,12 +106,8 @@ jobs:
     - name: Create Git Tag
       id: create_tag
       run: |
-        # Определение уникального тега для pull request и основной ветки
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          version="${{ needs.version-check.outputs.version }}-PR${{ github.event.pull_request.number }}"
-        else
-          version="v${{ needs.version-check.outputs.version }}"
-        fi
+        # Использование версии из setup.py для создания тега
+        version="v${{ needs.version-check.outputs.version }}"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag -a "$version" -m "Release $version"
