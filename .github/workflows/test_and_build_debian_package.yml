@@ -39,8 +39,10 @@ jobs:
         run: |
           # Get the latest tag
           latest_tag=$(git describe --tags --abbrev=0)
+          echo "Latest tag: $latest_tag"
           # Extract the version from the latest tag
           latest_version=${latest_tag#v}
+          echo "Latest version: $latest_version"
           # Compare the current version with the latest version
           if [ "${{ env.version }}" == "$latest_version" ]; then
             echo "Version has not changed. Failing the workflow."
