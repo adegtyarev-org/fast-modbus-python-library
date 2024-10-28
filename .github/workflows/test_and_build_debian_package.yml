@@ -53,7 +53,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: test_and_build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
     steps:
     - name: Checkout repository
@@ -64,7 +64,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd "${GITHUB_WORKSPACE}"  # Переходим в директорию репозитория
-        version="v${{ needs.test_and_build.outputs.version }}"
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # Создаем тег формата prv<номер_пулл-реквеста> для PR
+          version="prv${{ github.event.pull_request.number }}"
+        else
+          # Стандартный тег для основного релиза
+          version="v${{ needs.test_and_build.outputs.version }}"
+        fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git config --global credential.helper store
@@ -75,6 +81,13 @@ jobs:
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
-        files: debian_package_${{ needs.test_and_build.outputs.package_name }}
+        files: |
+          debian_package_${{ needs.test_and_build.outputs.package_name }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      with:
+        tag_name: ${{ steps.create_tag.outputs.version }}
+        name: Release ${{ steps.create_tag.outputs.version }}
+        draft: false
+        prerelease: true  # Отмечаем релизы для пулл-реквестов как предварительные
