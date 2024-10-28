@@ -65,7 +65,9 @@ jobs:
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
-        fpm -s python -t deb setup.py --python-bin python3 --name fastmodbuslibrary --version $version
+        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
+
+        # Output the package name to use it in the release step
         echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
     - name: Create Git Tag
