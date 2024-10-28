@@ -45,6 +45,9 @@ jobs:
       - name: Check version change
         id: check_version
         run: |
+          # Debug: Print the GITHUB_TOKEN
+          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+
           # Get the latest tag
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null)
           if [ -z "$latest_tag" ]; then
