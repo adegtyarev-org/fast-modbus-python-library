@@ -30,18 +30,24 @@ jobs:
 
     - name: Install Package in Editable Mode
       run: |
-        # Install the package in editable mode to make modules accessible
         pip install -e .
 
-    - name: Get Version from setup.py
+    - name: Get Version from setup.py and Check for Update
       id: version_check
       run: |
-        version=$(python setup.py --version | tr -d '[:space:]')
-        echo "Version is $version"
-        echo "::set-output name=version::$version"
+        current_version=$(python setup.py --version | tr -d '[:space:]')
+        echo "Current version in setup.py: $current_version"
+        last_version=$(git describe --tags --abbrev=0 || echo "none")
+        echo "Last version tag: $last_version"
+
+        if [ "$last_version" == "v$current_version" ]; then
+          echo "Error: Version in setup.py ($current_version) has not been updated from the last release ($last_version)"
+          exit 1
+        fi
+
+        echo "::set-output name=version::$current_version"
 
     - name: Run Tests
-      # Temporarily add current directory to PYTHONPATH for testing
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: pytest tests/
@@ -70,17 +76,21 @@ jobs:
     - name: Build Debian Package
       id: build_package
       run: |
-        version=${{ needs.test.outputs.version }}
+        version="${{ needs.test.outputs.version }}"
+        if [ -z "$version" ]; then
+          echo "Error: Version is empty. Ensure that version is set correctly from setup.py."
+          exit 1
+        fi
         echo "Building Debian package version $version..."
-        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
+        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version "$version" .
         echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
     - name: Create Git Tag
-      id: create_tag  # ID to pass the tag output to the release step
+      id: create_tag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        version=${{ needs.test.outputs.version }}
+        version="${{ needs.test.outputs.version }}"
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           tag="prv${{ github.event.pull_request.number }}-v${version}"
           git push --delete origin "$tag" || true
