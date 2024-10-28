@@ -1,3 +1,4 @@
+from unittest import mock
 import unittest
 from unittest.mock import patch, MagicMock
 from fastmodbuslibrary.fast_modbus_events import ModbusEventReader
@@ -8,11 +9,17 @@ class TestModbusEventReader(unittest.TestCase):
     """
 
     def setUp(self):
+        # Mock serial.Serial to avoid needing real port
+        self.patcher = mock.patch('serial.Serial')
+        self.mock_serial = self.patcher.start()
         """
         Set up the test environment by initializing a ModbusEventReader instance and mocking the serial port.
         """
         self.event_reader = ModbusEventReader('/dev/ttyACM0', 9600)
         self.event_reader.serial_port = MagicMock()
+
+    def tearDown(self):
+        self.patcher.stop()
 
     @patch('fastmodbuslibrary.common.ModbusCommon.send_command')
     @patch('fastmodbuslibrary.common.ModbusCommon.wait_for_response')
