@@ -24,7 +24,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Step 3: Extract the version from setup.py and save it as an environment variable
+      # Step 3: Install setuptools
+      - name: Install setuptools
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools
+
+      # Step 4: Extract the version from setup.py and save it as an environment variable
       - name: Extract version from setup.py
         id: get_version
         run: |
@@ -33,7 +39,7 @@ jobs:
           echo "Package version: $version"
           echo "version=$version" >> $GITHUB_ENV
 
-      # Step 4: Check if the version has changed
+      # Step 5: Check if the version has changed
       - name: Check version change
         id: check_version
         run: |
@@ -51,14 +57,14 @@ jobs:
             echo "Version has changed. Proceeding with the workflow."
           fi
 
-      # Step 5: Install necessary dependencies for running tests
+      # Step 6: Install necessary dependencies for running tests
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
 
-      # Step 6: Run tests
+      # Step 7: Run tests
       - name: Run unit tests
         run: |
           export PYTHONPATH="${{ github.workspace }}:${PYTHONPATH}"
