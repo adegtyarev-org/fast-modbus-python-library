@@ -3,11 +3,11 @@ name: Build and Release
 on:
   push:
     branches:
-      - main  # Runs on push to main branch
+      - main  # Запускается при пуше в ветку main
 
   pull_request:
     branches:
-      - '*'  # Runs on all pull requests to any branch
+      - '*'  # Запускается при создании pull request в любую ветку
 
 jobs:
   # Job 1: Version Check
@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -25,13 +25,13 @@ jobs:
 
     - name: Install Core Dependencies
       run: |
-        # Install setuptools and wheel for setup.py
+        # Установка необходимых зависимостей для setup.py
         pip install setuptools wheel
 
     - name: Check Version in setup.py
       id: version_check
       run: |
-        # Extract version from setup.py and store it for later steps
+        # Извлечение версии из setup.py и сохранение для последующих шагов
         version=$(python setup.py --version)
         echo "Version from setup.py is $version"
         echo "::set-output name=version::$version"
@@ -39,11 +39,11 @@ jobs:
   # Job 2: Run Tests
   tests:
     runs-on: ubuntu-latest
-    needs: version-check  # Depends on the successful completion of version-check
+    needs: version-check  # Зависимость от успешного завершения version-check
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -52,30 +52,30 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        # Install general and test dependencies, including pytest
+        # Установка зависимостей для тестов, включая pytest
         pip install -r requirements.txt
-        pip install pytest  # Install pytest explicitly
-        # Install test-specific dependencies if file exists
+        pip install pytest  # Установка pytest явно
+        # Установка тестовых зависимостей, если файл существует
         if [ -f test-requirements.txt ]; then pip install -r test-requirements.txt; fi
 
     - name: Install Package
       run: |
-        # Install the package in editable mode
+        # Установка пакета в режиме разработки
         pip install -e .
 
     - name: Run Tests
       run: |
-        # Run tests using pytest
+        # Запуск тестов с использованием pytest
         pytest tests/
 
   # Job 3: Build Debian Package
   build-package:
     runs-on: ubuntu-latest
-    needs: tests  # Depends on the successful completion of tests
+    needs: tests  # Зависимость от успешного завершения tests
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -84,38 +84,38 @@ jobs:
 
     - name: Install Core Dependencies
       run: |
-        # Install setuptools and wheel for setup.py
+        # Установка необходимых зависимостей для сборки пакета
         pip install setuptools wheel
 
     - name: Build Debian Package
       run: |
-        # Build the Debian package using the version from setup.py
+        # Сборка Debian пакета с использованием версии из setup.py
         version=$(python setup.py --version)
         echo "Building Debian package version $version..."
-        # Assuming the package will be named with the extracted version
+        # Предполагаем, что пакет будет называться debian_package_$version.deb
         # dpkg-deb --build my_package/ debian_package_${version}.deb
-        # Save package name to output for use in the release step
+        # Сохранение имени пакета для шага release
         echo "::set-output name=package_name::debian_package_${version}.deb"
 
   # Job 4: Release on GitHub
   release:
     runs-on: ubuntu-latest
-    needs: build-package  # Depends on the successful completion of build-package
+    needs: build-package  # Зависимость от успешного завершения build-package
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Create Git Tag
       id: create_tag
       run: |
-        # Set up a unique version tag for PRs and main branch
+        # Определение уникального тега для pull request и основной ветки
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           version="${{ needs.version-check.outputs.version }}-PR${{ github.event.pull_request.number }}"
         else
           version="v${{ needs.version-check.outputs.version }}"
         fi
-        # Remove any spaces or newlines in the version variable
+        # Удаление лишних пробелов в переменной version
         version=$(echo "$version" | tr -d '[:space:]')
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -125,7 +125,7 @@ jobs:
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
-        # Upload the Debian package to GitHub Release
+        # Загрузка Debian пакета в релиз GitHub
         files: debian_package_${{ needs.build-package.outputs.package_name }}
         tag_name: ${{ steps.create_tag.outputs.version }}
       env:
