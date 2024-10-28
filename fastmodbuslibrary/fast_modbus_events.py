@@ -8,6 +8,9 @@ class ModbusEventReader(ModbusCommon):
     """
 
     REQUEST_EVENTS_COMMAND = 0x10
+    COMMAND_EXTENDED = 0x46
+    SUBCOMMAND_EVENT_TRANSMISSION = 0x11
+    MIN_PACKET_LENGTH = 6
 
     def __init__(self, device: str, baudrate: int):
         """
@@ -30,9 +33,13 @@ class ModbusEventReader(ModbusCommon):
         Returns:
             dict: A structure containing packet data, including packet_info and events.
         """
-        if len(response) < 6:
+        if len(response) < self.MIN_PACKET_LENGTH:
             self.logger.debug("Received packet is too short.")
-            return {}  # Return an empty dictionary if the packet is less than 6 bytes
+            return {}
+
+        if response[1] != self.COMMAND_EXTENDED and response[2] != self.SUBCOMMAND_EVENT_TRANSMISSION:
+            self.logger.debug("Received packet is not an event transmission packet.")
+            return {}
 
         packet_info = {}  # Dictionary to store packet information
 
