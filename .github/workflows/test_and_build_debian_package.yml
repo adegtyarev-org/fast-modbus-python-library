@@ -29,6 +29,7 @@ jobs:
 
     - name: Install Package in Editable Mode
       run: |
+        # Install the package in editable mode to make modules accessible
         pip install -e .
 
     - name: Version Check
@@ -42,7 +43,7 @@ jobs:
       run: pytest tests/
 
     - name: Build Debian Package
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
@@ -59,12 +60,15 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Create Git Tag
-      id: create_tag  # Добавлен id для передачи тега в релиз
+      id: create_tag  # ID to pass the tag output to the release step
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           version="prv${{ github.event.pull_request.number }}"
+          # Delete existing tag if it exists
+          git push --delete origin "$version" || true
+          git tag -d "$version" || true
         else
           version="v${{ needs.test_and_build.outputs.version }}"
         fi
