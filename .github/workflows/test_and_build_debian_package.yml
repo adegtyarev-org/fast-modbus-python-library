@@ -17,6 +17,8 @@ jobs:
       # Step 1: Check out the repository code
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 2: Set up the Python environment
       - name: Set up Python
@@ -82,6 +84,8 @@ jobs:
       # Step 1: Check out the repository code
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 2: Set up the Python environment
       - name: Set up Python
