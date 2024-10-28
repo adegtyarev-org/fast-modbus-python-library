@@ -80,14 +80,12 @@ jobs:
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
+      if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
       with:
-        files: |
-          debian_package_${{ needs.test_and_build.outputs.package_name }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
-      with:
+        files: debian_package_${{ needs.test_and_build.outputs.package_name }}
         tag_name: ${{ steps.create_tag.outputs.version }}
         name: Release ${{ steps.create_tag.outputs.version }}
         draft: false
-        prerelease: true  # Отмечаем релизы для пулл-реквестов как предварительные
+        prerelease: ${{ github.event_name == 'pull_request' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
