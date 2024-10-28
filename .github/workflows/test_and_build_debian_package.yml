@@ -44,7 +44,11 @@ jobs:
         id: check_version
         run: |
           # Get the latest tag
-          latest_tag=$(git describe --tags --abbrev=0)
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null)
+          if [ -z "$latest_tag" ]; then
+            echo "No tags found. Assuming version has changed."
+            exit 0
+          fi
           echo "Latest tag: $latest_tag"
           # Extract the version from the latest tag
           latest_version=${latest_tag#v}
