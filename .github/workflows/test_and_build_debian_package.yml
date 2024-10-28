@@ -3,10 +3,7 @@ name: Test and Build Debian Package
 on:
   pull_request:
     branches:
-      - '**'  # Запускается при PR в любую ветку
-  push:
-    branches:
-      - '**'  # Запускается при пуше в любую ветку
+      - '**'  # Запуск на любом pull request
 
 jobs:
   test:
