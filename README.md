@@ -1,7 +1,7 @@
 # Fast Modbus Library
 
 ## Description
-! This repository is not affiliated with and not supported by Wiren Board.
+! This repository is not affiliated with or maintained by Wiren Board.
 
 A library for working with Fast Modbus devices via a serial port (RS-485). It contains modules for configuring event notifications, scanning devices, and working with the Modbus client.
 
@@ -101,14 +101,13 @@ python -m unittest discover tests
 - **test_modbus_client_single.py**: Tests for working with a single Modbus client.
 - **test_modbus_client_write.py**: Tests for writing data to Modbus.
 - **test_modbus_config_events.py**: Tests for configuring event notifications.
-- **test_modbus_events_confirmation.py**: Tests for event confirmation.
 - **test_modbus_events.py**: Tests for event handling.
 - **test_modbus_scanner.py**: Tests for device scanning.
 
 
 ## Contributing
 
-Initial code generated with assistance from [DeepSeek](https://chat.deepseek.com/). Contributions and improvements are welcome! Feel free to submit pull requests to improve functionality or documentation.
+Initial code generated with assistance from [DeepSeek](https://chat.deepseek.com/) and [ChatGPT](https://openai.com/index/chatgpt/). Contributions and improvements are welcome! Feel free to submit pull requests to improve functionality or documentation.
 
 ## License
 This project is licensed under the MIT License.
