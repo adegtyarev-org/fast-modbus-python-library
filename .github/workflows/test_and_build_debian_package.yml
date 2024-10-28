@@ -27,14 +27,15 @@ jobs:
         pip install -r requirements.txt
         pip install pytest setuptools wheel
 
-    - name: Version Check
-      id: version_check
+    - name: Install Package in Editable Mode
       run: |
-        version=$(python setup.py --version | tr -d '[:space:]')
-        echo "Version is $version"
-        echo "::set-output name=version::$version"
+        # Install the package in editable mode to make modules accessible
+        pip install -e .
 
     - name: Run Tests
+      # Temporarily add current directory to PYTHONPATH for testing
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: pytest tests/
 
   release:
