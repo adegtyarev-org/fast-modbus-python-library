@@ -54,14 +54,15 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
     - name: Create Git Tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         version="v${{ needs.test_and_build.outputs.version }}"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global credential.helper store
+        echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
         git tag -a "$version" -m "Release $version"
         git push origin "$version" --force
 
