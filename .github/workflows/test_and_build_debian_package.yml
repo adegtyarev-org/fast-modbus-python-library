@@ -12,8 +12,36 @@ on:
       - 'main'
 
 jobs:
-  build-and-release:
+  # Job 1: Version Check
+  version-check:
     runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install Core Dependencies
+      run: |
+        # Install setuptools and wheel for setup.py
+        pip install setuptools wheel
+
+    - name: Check Version in setup.py
+      id: version_check
+      run: |
+        # Extract version from setup.py and store it for later steps
+        version=$(python setup.py --version)
+        echo "Version from setup.py is $version"
+        echo "::set-output name=version::$version"
+
+  # Job 2: Run Tests
+  tests:
+    runs-on: ubuntu-latest
+    needs: version-check  # Depends on the successful completion of version-check
 
     steps:
     - name: Checkout repository
@@ -31,29 +59,44 @@ jobs:
         # Install test-specific dependencies if file exists
         if [ -f test-requirements.txt ]; then pip install -r test-requirements.txt; fi
 
-    - name: Check Version in setup.py
-      id: version_check
-      run: |
-        # Extract version from setup.py and store it for later steps
-        version=$(python setup.py --version)
-        echo "Version from setup.py is $version"
-        echo "::set-output name=version::$version"
-
     - name: Run Tests
       run: |
         # Run tests using pytest
         pytest tests/
 
+  # Job 3: Build Debian Package
+  build-package:
+    runs-on: ubuntu-latest
+    needs: tests  # Depends on the successful completion of tests
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install Core Dependencies
+      run: |
+        # Install setuptools and wheel for setup.py
+        pip install setuptools wheel
+
     - name: Build Debian Package
       run: |
         # Build the Debian package using the version from setup.py
-        echo "Building Debian package version ${{ steps.version_check.outputs.version }}..."
+        version=$(python setup.py --version)
+        echo "Building Debian package version $version..."
         # Assuming the package will be named with the extracted version
-        # dpkg-deb --build my_package/ debian_package_${{ steps.version_check.outputs.version }}.deb
+        # dpkg-deb --build my_package/ debian_package_${version}.deb
+        # Save package name to output for use in the release step
+        echo "::set-output name=package_name::debian_package_${version}.deb"
 
+  # Job 4: Release on GitHub
   release:
     runs-on: ubuntu-latest
-    needs: build-and-release  # Depends on successful build-and-release completion
+    needs: build-package  # Depends on the successful completion of build-package
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Runs only on merge to main branch
 
     steps:
@@ -63,15 +106,16 @@ jobs:
     - name: Create Git Tag
       run: |
         # Configure Git and create a version tag
+        version=$(python setup.py --version)
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag -a v${{ needs.build-and-release.outputs.version_check.version }} -m "Release version ${{ needs.build-and-release.outputs.version_check.version }}"
-        git push origin v${{ needs.build-and-release.outputs.version_check.version }}
+        git tag -a v${version} -m "Release version ${version}"
+        git push origin v${version}
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
         # Upload the Debian package to GitHub Release
-        files: debian_package_${{ needs.build-and-release.outputs.version_check.version }}.deb
+        files: debian_package_${{ needs.build-package.outputs.package_name }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
