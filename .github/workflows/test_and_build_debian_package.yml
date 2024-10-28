@@ -57,6 +57,13 @@ jobs:
         fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
         echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
+    - name: Verify Package File
+      # Check the existence of the .deb file and list directory contents for debugging
+      run: |
+        echo "Checking contents of the current directory and output directory:"
+        ls -l
+        ls -l output || echo "Output directory not found"
+
   release:
     runs-on: ubuntu-latest
     needs: test_and_build
@@ -88,7 +95,7 @@ jobs:
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ needs.test_and_build.outputs.package_name }}
+        files: ${{ steps.build_package.outputs.package_name }}
         tag_name: ${{ steps.create_tag.outputs.tag }}
         name: Release ${{ steps.create_tag.outputs.tag }}
         draft: false
