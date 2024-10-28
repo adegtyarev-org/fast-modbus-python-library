@@ -1,41 +1,11 @@
-name: Build Packages
+name: Build Debian Package
 
 on:
-  push:
-    branches:
-      - '**'  # Запуск при пушах в любую ветку
   pull_request:
     branches:
       - '**'  # Запуск при пуллреквестах из любой ветки
 
 jobs:
-  build_windows:
-    runs-on: windows-latest
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-
-      - name: Build .exe package
-        run: |
-          pyinstaller --onefile fastmodbuslibrary/__init__.py --name fastmodbuslibrary.exe
-        shell: cmd
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: windows-package
-          path: dist/*.exe
-
   build_debian:
     runs-on: ubuntu-latest
     steps:
@@ -54,28 +24,7 @@ jobs:
           dpkg-deb --build debian_package
 
       - name: Upload Debian artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: debian-package
           path: debian_package.deb
-
-  build_arch:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v2
-
-      - name: Install Arch package tools
-        run: sudo apt-get update && sudo apt-get install -y base-devel fakeroot
-
-      - name: Build .pkg.tar.zst package
-        run: |
-          mkdir -p arch_package/PKGBUILD
-          echo "pkgname=fastmodbuslibrary\npkgver=1.0\npkgrel=1\narch=('x86_64')\ndepends=('python')\nsource=('setup.py')\npackage() {\n  python3 setup.py install --root=\"\$pkgdir\"\n}" > arch_package/PKGBUILD
-          makepkg -f -p arch_package/PKGBUILD
-
-      - name: Upload Arch artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: arch-package
-          path: arch_package/*.pkg.tar.zst
