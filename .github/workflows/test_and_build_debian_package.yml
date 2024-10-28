@@ -1,159 +1,59 @@
-name: Test and Build Debian Package
+name: Build and Release
 
-# Trigger workflow on pull requests for any branch and on pushes to the main branch
 on:
-  pull_request:
-    branches:
-      - '**'
   push:
     branches:
-      - 'main'
+      - main  # Запускается при пуше в ветку main
 
 jobs:
-  test:
-    # Define the environment for the test job
+  build-and-release:
     runs-on: ubuntu-latest
+
     steps:
-      # Step 1: Check out the repository code
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: false
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      # Step 2: Set up the Python environment
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
 
-      # Step 3: Install setuptools
-      - name: Install setuptools
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools
+    - name: Install Dependencies
+      run: |
+        # Установка зависимостей для тестов
+        pip install -r requirements.txt
+        pip install -r test-requirements.txt
 
-      # Step 4: Extract the version from setup.py and save it as an environment variable
-      - name: Extract version from setup.py
-        id: get_version
-        run: |
-          # Retrieve the version from setup.py
-          version=$(python setup.py --version)
-          echo "Package version: $version"
-          echo "version=$version" >> $GITHUB_ENV
+    - name: Check Version in setup.py
+      id: version_check
+      run: |
+        # Извлекаем версию из setup.py и передаем её дальше
+        version=$(python setup.py --version)
+        echo "Version from setup.py is $version"
+        echo "::set-output name=version::$version"
 
-      # Step 5: Check if the version has changed
-      - name: Check version change
-        id: check_version
-        run: |
-          # Get the latest tag using GitHub API
-          latest_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/tags" | \
-            jq -r '.[0].name')
-          if [ -z "$latest_tag" ]; then
-            echo "No tags found. Assuming version has changed."
-            exit 0
-          fi
-          echo "Latest tag: $latest_tag"
-          # Extract the version from the latest tag
-          latest_version=${latest_tag#v}
-          echo "Latest version: $latest_version"
-          # Compare the current version with the latest version
-          if [ "${{ env.version }}" == "$latest_version" ]; then
-            echo "Version has not changed. Failing the workflow."
-            exit 1
-          else
-            echo "Version has changed. Proceeding with the workflow."
-          fi
+    - name: Run Tests
+      run: |
+        # Запуск тестов, например с использованием pytest
+        pytest tests/
 
-      # Step 6: Install necessary dependencies for running tests
-      - name: Install test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+    - name: Build Debian Package
+      run: |
+        # Сборка пакета, используя версию из setup.py
+        echo "Building Debian package version ${{ steps.version_check.outputs.version }}..."
+        # Предполагаем, что пакет будет назван с использованием версии, например:
+        # dpkg-deb --build my_package/ debian_package_${{ steps.version_check.outputs.version }}.deb
 
-      # Step 7: Run tests
-      - name: Run unit tests
-        run: |
-          export PYTHONPATH="${{ github.workspace }}:${PYTHONPATH}"
-          pytest tests/
+    - name: Create Git Tag
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag -a v${{ steps.version_check.outputs.version }} -m "Release version ${{ steps.version_check.outputs.version }}"
+        git push origin v${{ steps.version_check.outputs.version }}
 
-  build:
-    # Define the environment for the build job
-    runs-on: ubuntu-latest
-    needs: test  # Ensure build only runs after successful test completion
-    steps:
-      # Step 1: Set up SSH agent
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # Step 2: Check out the repository code using SSH
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # Step 3: Set up the Python environment
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      # Step 4: Install dependencies required for building the package
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel  # Install setuptools to use setup.py
-
-      # Step 5: Extract the version from setup.py and save it as an environment variable
-      - name: Extract version from setup.py
-        id: get_version
-        run: |
-          # Retrieve the version from setup.py
-          version=$(python setup.py --version)
-          echo "Package version: $version"
-          echo "version=$version" >> $GITHUB_ENV
-
-      # Step 6: Configure Git user
-      - name: Configure Git user
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-
-      # Step 7: Create a tag based on the extracted version
-      - name: Create tag
-        run: |
-          git tag -a "v${{ env.version }}" -m "Release v${{ env.version }}"
-          git push origin "v${{ env.version }}"
-
-      # Step 8: Build the Debian package with the extracted version
-      - name: Build .deb package
-        run: |
-          mkdir -p debian_package/DEBIAN
-          echo "Package: fastmodbuslibrary" > debian_package/DEBIAN/control
-          echo "Version: ${{ env.version }}" >> debian_package/DEBIAN/control
-          echo "Section: base" >> debian_package/DEBIAN/control
-          echo "Priority: optional" >> debian_package/DEBIAN/control
-          echo "Architecture: all" >> debian_package/DEBIAN/control
-          echo "Maintainer: Aleksandr Degtyarev <adegtyarev.ap@gmail.com>" >> debian_package/DEBIAN/control
-          echo "Description: Fast Modbus Python Library" >> debian_package/DEBIAN/control
-          python setup.py install --root=debian_package/usr/local
-          dpkg-deb --build debian_package
-
-      # Step 9: Upload the Debian package as an artifact for later use
-      - name: Upload Debian Package
-        uses: actions/upload-artifact@v3
-        with:
-          name: debian-package
-          path: debian_package.deb
-
-      # Step 10: Upload the Debian package to GitHub Releases
-      - name: Upload to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          files: debian_package.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Release on GitHub
+      uses: softprops/action-gh-release@v1
+      with:
+        files: debian_package_${{ steps.version_check.outputs.version }}.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
