@@ -110,13 +110,19 @@ jobs:
           echo "Package version: $version"
           echo "version=$version" >> $GITHUB_ENV
 
-      # Step 5: Create a tag based on the extracted version
+      # Step 5: Configure Git user
+      - name: Configure Git user
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+      # Step 6: Create a tag based on the extracted version
       - name: Create tag
         run: |
           git tag -a "v${{ env.version }}" -m "Release v${{ env.version }}"
           git push origin "v${{ env.version }}"
 
-      # Step 6: Build the Debian package with the extracted version
+      # Step 7: Build the Debian package with the extracted version
       - name: Build .deb package
         run: |
           mkdir -p debian_package/DEBIAN
@@ -130,14 +136,14 @@ jobs:
           python setup.py install --root=debian_package/usr/local
           dpkg-deb --build debian_package
 
-      # Step 7: Upload the Debian package as an artifact for later use
+      # Step 8: Upload the Debian package as an artifact for later use
       - name: Upload Debian Package
         uses: actions/upload-artifact@v3
         with:
           name: debian-package
           path: debian_package.deb
 
-      # Step 8: Upload the Debian package to GitHub Releases
+      # Step 9: Upload the Debian package to GitHub Releases
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
