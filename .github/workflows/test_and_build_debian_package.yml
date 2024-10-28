@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Загружаем все теги для корректной проверки версии
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -35,16 +37,24 @@ jobs:
     - name: Get Version from setup.py and Check for Update
       id: version_check
       run: |
+        # Извлекаем текущую версию из setup.py
         current_version=$(python setup.py --version | tr -d '[:space:]')
         echo "Current version in setup.py: $current_version"
+
+        # Извлекаем последнюю версию из тегов
         last_version=$(git describe --tags --abbrev=0 || echo "none")
         echo "Last version tag: $last_version"
 
-        if [ "$last_version" == "v$current_version" ]; then
+        # Проверка на отсутствие тегов или на совпадение версии
+        if [ "$last_version" == "none" ]; then
+          echo "Error: No previous tags found. Make sure to tag versions properly."
+          exit 1
+        elif [ "$last_version" == "v$current_version" ]; then
           echo "Error: Version in setup.py ($current_version) has not been updated from the last release ($last_version)"
           exit 1
         fi
 
+        # Устанавливаем выходную переменную для последующего использования
         echo "::set-output name=version::$current_version"
 
     - name: Run Tests
@@ -60,6 +70,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Загружаем все теги для доступа к версии
 
     - name: Set up Python
       uses: actions/setup-python@v2
