@@ -42,13 +42,22 @@ jobs:
     - name: Run Tests
       run: pytest tests/
 
+    - name: Install FPM
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ruby ruby-dev rubygems build-essential
+        sudo gem install --no-document fpm
+
     - name: Build Debian Package
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      id: build_package
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
-        # dpkg-deb --build my_package/ debian_package_${version}.deb
-        echo "::set-output name=package_name::debian_package_${version}.deb"
+        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
+
+        # Save package path to output
+        echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
   release:
     runs-on: ubuntu-latest
@@ -81,7 +90,7 @@ jobs:
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
-        files: debian_package_${{ needs.test_and_build.outputs.package_name }}
+        files: ${{ steps.build_package.outputs.package_name }}
         tag_name: ${{ steps.create_tag.outputs.tag }}
         name: Release ${{ steps.create_tag.outputs.tag }}
         draft: false
