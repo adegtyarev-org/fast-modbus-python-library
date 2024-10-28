@@ -27,6 +27,11 @@ jobs:
         pip install -r requirements.txt
         pip install pytest setuptools wheel
 
+    - name: Install Package in Editable Mode
+      run: |
+        # Установка пакета в режиме разработки для доступности модулей
+        pip install -e .
+
     - name: Version Check
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
