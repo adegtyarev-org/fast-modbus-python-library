@@ -1,10 +1,13 @@
 name: Test and Build Debian Package
 
-# Trigger workflow only on pull requests for any branch
+# Trigger workflow on pull requests for any branch and on pushes to the main branch
 on:
   pull_request:
     branches:
       - '**'
+  push:
+    branches:
+      - 'main'
 
 jobs:
   test:
@@ -84,3 +87,11 @@ jobs:
         with:
           name: debian-package
           path: debian_package.deb
+
+      # Step 7: Upload the Debian package to GitHub Releases
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: debian_package.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
