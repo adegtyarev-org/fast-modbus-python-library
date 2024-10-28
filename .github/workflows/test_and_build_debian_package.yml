@@ -115,10 +115,12 @@ jobs:
         else
           version="v${{ needs.version-check.outputs.version }}"
         fi
+        # Remove any spaces or newlines in the version variable
+        version=$(echo "$version" | tr -d '[:space:]')
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag -a $version -m "Release $version"
-        git push origin $version --force
+        git tag -a "$version" -m "Release $version"
+        git push origin "$version" --force
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
