@@ -29,11 +29,10 @@ jobs:
 
     - name: Install Package in Editable Mode
       run: |
-        # Установка пакета в режиме разработки для доступности модулей
         pip install -e .
 
     - name: Version Check
-      id: version_check  # Добавляем ID, чтобы передать вывод в другие шаги
+      id: version_check
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Version is $version"
@@ -63,20 +62,15 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        cd "${GITHUB_WORKSPACE}"  # Переходим в директорию репозитория
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          # Создаем тег формата prv<номер_пулл-реквеста> для PR
           version="prv${{ github.event.pull_request.number }}"
         else
-          # Стандартный тег для основного релиза
           version="v${{ needs.test_and_build.outputs.version }}"
         fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global credential.helper store
-        echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
         git tag -a "$version" -m "Release $version"
-        git push origin "$version" --force
+        git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$version" --force
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
