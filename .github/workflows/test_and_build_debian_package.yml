@@ -24,14 +24,39 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Step 3: Install necessary dependencies for running tests
+      # Step 3: Extract the version from setup.py and save it as an environment variable
+      - name: Extract version from setup.py
+        id: get_version
+        run: |
+          # Retrieve the version from setup.py
+          version=$(python setup.py --version)
+          echo "Package version: $version"
+          echo "version=$version" >> $GITHUB_ENV
+
+      # Step 4: Check if the version has changed
+      - name: Check version change
+        id: check_version
+        run: |
+          # Get the latest tag
+          latest_tag=$(git describe --tags --abbrev=0)
+          # Extract the version from the latest tag
+          latest_version=${latest_tag#v}
+          # Compare the current version with the latest version
+          if [ "${{ env.version }}" == "$latest_version" ]; then
+            echo "Version has not changed. Failing the workflow."
+            exit 1
+          else
+            echo "Version has changed. Proceeding with the workflow."
+          fi
+
+      # Step 5: Install necessary dependencies for running tests
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
 
-      # Step 4: Run tests
+      # Step 6: Run tests
       - name: Run Tests
         run: |
           export PYTHONPATH="${{ github.workspace }}:${PYTHONPATH}"
@@ -67,7 +92,13 @@ jobs:
           echo "Package version: $version"
           echo "version=$version" >> $GITHUB_ENV
 
-      # Step 5: Build the Debian package with the extracted version
+      # Step 5: Create a tag based on the extracted version
+      - name: Create tag
+        run: |
+          git tag -a "v${{ env.version }}" -m "Release v${{ env.version }}"
+          git push origin "v${{ env.version }}"
+
+      # Step 6: Build the Debian package with the extracted version
       - name: Build .deb package
         run: |
           mkdir -p debian_package/DEBIAN
@@ -81,14 +112,14 @@ jobs:
           python setup.py install --root=debian_package/usr/local
           dpkg-deb --build debian_package
 
-      # Step 6: Upload the Debian package as an artifact for later use
+      # Step 7: Upload the Debian package as an artifact for later use
       - name: Upload Debian Package
         uses: actions/upload-artifact@v3
         with:
           name: debian-package
           path: debian_package.deb
 
-      # Step 7: Upload the Debian package to GitHub Releases
+      # Step 8: Upload the Debian package to GitHub Releases
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
