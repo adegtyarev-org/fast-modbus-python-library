@@ -3,10 +3,10 @@ name: Build Packages
 on:
   push:
     branches:
-      - main
+      - '**'  # Запуск при пушах в любую ветку
   pull_request:
     branches:
-      - main
+      - '**'  # Запуск при пуллреквестах из любой ветки
 
 jobs:
   build_windows:
@@ -78,4 +78,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: arch-package
-          path: *.pkg.tar.zst
+          path: arch_package/*.pkg.tar.zst
