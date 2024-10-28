@@ -3,11 +3,11 @@ name: Build and Release
 on:
   push:
     branches:
-      - main  # Запуск при мерже в ветку main
+      - main  # Runs on merge to main branch
 
   pull_request:
     branches:
-      - '*'    # Запуск на пулл-реквесты в любые ветки, кроме main
+      - '*'  # Runs on pull requests to any branch except main
     paths-ignore:
       - 'main'
 
@@ -26,34 +26,35 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        # Установка зависимостей для тестов
+        # Install general and test dependencies
         pip install -r requirements.txt
-        pip install -r test-requirements.txt
+        # Install test-specific dependencies if file exists
+        if [ -f test-requirements.txt ]; then pip install -r test-requirements.txt; fi
 
     - name: Check Version in setup.py
       id: version_check
       run: |
-        # Извлекаем версию из setup.py и передаем её дальше
+        # Extract version from setup.py and store it for later steps
         version=$(python setup.py --version)
         echo "Version from setup.py is $version"
         echo "::set-output name=version::$version"
 
     - name: Run Tests
       run: |
-        # Запуск тестов, например с использованием pytest
+        # Run tests using pytest
         pytest tests/
 
     - name: Build Debian Package
       run: |
-        # Сборка пакета, используя версию из setup.py
+        # Build the Debian package using the version from setup.py
         echo "Building Debian package version ${{ steps.version_check.outputs.version }}..."
-        # Предполагаем, что пакет будет назван с использованием версии, например:
+        # Assuming the package will be named with the extracted version
         # dpkg-deb --build my_package/ debian_package_${{ steps.version_check.outputs.version }}.deb
 
   release:
     runs-on: ubuntu-latest
-    needs: build-and-release  # Зависи от успешного выполнения build-and-release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Запускается только на мерж в main
+    needs: build-and-release  # Depends on successful build-and-release completion
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Runs only on merge to main branch
 
     steps:
     - name: Checkout repository
@@ -61,6 +62,7 @@ jobs:
 
     - name: Create Git Tag
       run: |
+        # Configure Git and create a version tag
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag -a v${{ needs.build-and-release.outputs.version_check.version }} -m "Release version ${{ needs.build-and-release.outputs.version_check.version }}"
@@ -69,6 +71,7 @@ jobs:
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
       with:
+        # Upload the Debian package to GitHub Release
         files: debian_package_${{ needs.build-and-release.outputs.version_check.version }}.deb
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
