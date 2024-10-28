@@ -33,9 +33,11 @@ jobs:
         pip install -e .
 
     - name: Version Check
+      id: version_check  # Добавляем ID, чтобы передать вывод в другие шаги
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Version is $version"
+        echo "::set-output name=version::$version"
 
     - name: Run Tests
       run: pytest tests/
@@ -54,10 +56,14 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
     - name: Create Git Tag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        cd "${GITHUB_WORKSPACE}"  # Переходим в директорию репозитория
         version="v${{ needs.test_and_build.outputs.version }}"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
