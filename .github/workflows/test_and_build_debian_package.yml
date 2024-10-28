@@ -24,8 +24,9 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        pip install setuptools wheel
         pip install -r requirements.txt
-        pip install pytest setuptools wheel
+        pip install pytest
 
     - name: Install Package in Editable Mode
       run: |
@@ -52,8 +53,9 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Install FPM
+    - name: Install Dependencies for Package Creation
       run: |
+        pip install setuptools wheel
         sudo apt-get update
         sudo apt-get install -y ruby ruby-dev rubygems build-essential
         sudo gem install --no-document fpm
@@ -63,7 +65,7 @@ jobs:
       run: |
         version=$(python setup.py --version | tr -d '[:space:]')
         echo "Building Debian package version $version..."
-        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
+        fpm -s python -t deb setup.py --python-bin python3 --name fastmodbuslibrary --version $version
         echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
     - name: Create Git Tag
