@@ -90,12 +90,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Step 2: Check out the repository code
+      # Step 2: Check out the repository code using SSH
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: false
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       # Step 3: Set up the Python environment
       - name: Set up Python
