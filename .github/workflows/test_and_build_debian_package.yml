@@ -76,12 +76,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          version="prv${{ github.event.pull_request.number }}"
+          version="prv$(python setup.py --version | tr -d '[:space:]')"
           # Delete existing tag if it exists
           git push --delete origin "$version" || true
           git tag -d "$version" || true
         else
-          version="v${{ needs.test.outputs.version }}"
+          version="v$(python setup.py --version | tr -d '[:space:]')"
         fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
