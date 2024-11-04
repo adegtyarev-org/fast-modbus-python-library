@@ -10,6 +10,29 @@ on:
       - '*'
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      current_version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Get current version from setup.py
+        id: get_version
+        run: |
+          VERSION=$(python -c "import re; f = open('setup.py').read(); print(re.search(r'version\s*=\s*[\"\\\']([0-9.]+)[\"\\\']', f).group(1))")
+          echo "::set-output name=version::$VERSION"
+
+      - name: Check version against main
+        run: |
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:setup.py | python -c "import re, sys; f = sys.stdin.read(); print(re.search(r'version\s*=\s*[\"\\\']([0-9.]+)[\"\\\']', f).group(1))")
+          if [ "${{ steps.get_version.outputs.version }}" == "$MAIN_VERSION" ]; then
+            echo "Version has not changed. Failing job."
+            exit 1
+          fi
+          echo "Version has changed. Proceeding."
   test:
     runs-on: ubuntu-latest
 
@@ -76,12 +99,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          version="prv${{ github.event.pull_request.number }}"
+          version="prv$(python setup.py --version | tr -d '[:space:]')"
           # Delete existing tag if it exists
           git push --delete origin "$version" || true
           git tag -d "$version" || true
         else
-          version="v${{ needs.test.outputs.version }}"
+          version="v$(python setup.py --version | tr -d '[:space:]')"
         fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
