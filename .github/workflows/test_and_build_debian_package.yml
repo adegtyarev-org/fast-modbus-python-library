@@ -28,7 +28,7 @@ jobs:
       - name: Check version against main
         run: |
           git fetch origin main
-          MAIN_VERSION=$(git show origin/main:setup.py | python setup.py --version | tr -d '[:space:]')
+          MAIN_VERSION=$(git show origin/main:setup.py | grep -Po "(?<=version=\s*[\"']).*?(?=[\"'])")
           echo "Version in main branch: $MAIN_VERSION"
           echo "Version in current branch: ${{ steps.get_version.outputs.version }}"
           if [ "${{ steps.get_version.outputs.version }}" == "$MAIN_VERSION" ]; then
@@ -36,7 +36,6 @@ jobs:
             exit 1
           fi
           echo "Version has changed in setup.py. Proceeding."
-
 
   test:
     runs-on: ubuntu-latest
