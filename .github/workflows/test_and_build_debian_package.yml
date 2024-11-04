@@ -1,4 +1,4 @@
-name: Build and Release
+name: Test, Build and Release
 
 on:
   push:
@@ -35,6 +35,7 @@ jobs:
           echo "Version has changed. Proceeding."
   test:
     runs-on: ubuntu-latest
+    needs: check-version
 
     steps:
     - name: Checkout repository
