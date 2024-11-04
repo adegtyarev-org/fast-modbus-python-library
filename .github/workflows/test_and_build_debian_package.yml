@@ -28,7 +28,7 @@ jobs:
       - name: Check version against main
         run: |
           git fetch origin main
-          MAIN_VERSION=$(git show origin/main:setup.py | grep -Po "(?<=version=\s*[\"']).*?(?=[\"'])")
+          MAIN_VERSION=$(git show origin/main:setup.py | grep -i 'version=' | head -n 1 | sed -E "s/.*version=['\"]([^'\"]+)['\"].*/\1/")
           echo "Version in main branch: $MAIN_VERSION"
           echo "Version in current branch: ${{ steps.get_version.outputs.version }}"
           if [ "${{ steps.get_version.outputs.version }}" == "$MAIN_VERSION" ]; then
