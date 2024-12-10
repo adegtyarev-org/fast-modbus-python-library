@@ -5,6 +5,11 @@
 
 A library for working with Fast Modbus devices via a serial port (RS-485). It contains modules for configuring event notifications, scanning devices, and working with the Modbus client.
 
+Links:
+* [Description of the Protocol](https://github.com/wirenboard/wb-modbus-ext-scanner/blob/main/docs/protocol.en.md)
+* [Article](https://github.com/wirenboard/wb-modbus-ext-scanner/blob/main/docs/article.en.md)
+* [Reference utility](https://github.com/wirenboard/wb-modbus-ext-scanner)
+
 ## Features
 - **Device Scanning**: Detects Modbus devices on the network.
 - **Data Exchange**: Reads and writes Modbus registers for real-time device communication.
