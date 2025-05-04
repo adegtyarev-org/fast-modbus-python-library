@@ -10,13 +10,11 @@ class ModbusCommon:
 
     Attributes:
         BROADCAST_ADDRESS (int): The broadcast address for Modbus communication.
-        EXTENDED_FUNCTION_CODE (int): The extended function code for Modbus communication.
     """
 
     BROADCAST_ADDRESS = 0xFD
-    EXTENDED_FUNCTION_CODE = 0x46
 
-    def __init__(self, device: str, baudrate: int):
+    def __init__(self, device: str, baudrate: int, ext_func_code: int):
         """
         Initialize the ModbusCommon instance.
 
@@ -26,6 +24,7 @@ class ModbusCommon:
         """
         self.device = device
         self.baudrate = baudrate
+        self.ext_func_code = ext_func_code
         self.logger = logging.getLogger(__name__)
         self.serial_port = self.init_serial()
 

@@ -12,8 +12,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Modbus Scanner Tool")
     parser.add_argument('-d', '--device', required=True, help="TTY serial device (e.g., /dev/ttyACM0)")
     parser.add_argument('-b', '--baud', type=int, default=9600, help="Baudrate, default 9600")
-    parser.add_argument('--command', type=lambda x: int(x, 0), default=0x46, help="Scan command (decimal or hex)")
-    parser.add_argument('--debug', action='store_true', help="Enable debug output")
+    parser.add_argument('-c', '--command', type=lambda x: int(x, 0), default=0x46, help="Scan command (decimal or hex)")
+    parser.add_argument('-D', '--debug', action='store_true', help="Enable debug output")
     return parser.parse_args()
 
 def print_devices(devices):
@@ -52,7 +52,7 @@ def main():
     """
     args = parse_args()
     setup_logging(args.debug)
-    scanner = ModbusScanner(args.device, args.baud)
+    scanner = ModbusScanner(args.device, args.baud, args.command)
     devices = scanner.scan_devices()
     scanner.serial_port.close()
     print_devices(devices)
