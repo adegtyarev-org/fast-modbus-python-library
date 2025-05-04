@@ -69,7 +69,7 @@ jobs:
     - name: Install Package in Editable Mode
       run: |
         # Install the package in editable mode to make modules accessible
-        pip install -e .
+        python -m pip install -e .
 
     - name: Run Tests
       # Temporarily add current directory to PYTHONPATH for testing
