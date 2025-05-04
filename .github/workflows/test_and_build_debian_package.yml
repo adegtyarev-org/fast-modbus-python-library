@@ -1,5 +1,7 @@
 name: Test, Build and Release
-
+permissions:
+  contents: write
+  
 on:
   push:
     branches:
@@ -31,6 +33,8 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Check version against main
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
         run: |
           git fetch origin main
           MAIN_VERSION=$(git show origin/main:setup.py \
@@ -60,14 +64,14 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install setuptools wheel
-        pip install -r requirements.txt
-        pip install pytest
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -r requirements.txt
+        python -m pip install pytest
 
     - name: Install Package in Editable Mode
       run: |
         # Install the package in editable mode to make modules accessible
-        pip install -e .
+        python -m pip install -e .
 
     - name: Run Tests
       # Temporarily add current directory to PYTHONPATH for testing
@@ -91,7 +95,7 @@ jobs:
 
     - name: Install Dependencies for Package Creation
       run: |
-        pip install setuptools wheel
+        python -m pip install --upgrade pip setuptools wheel
         sudo apt-get update
         sudo apt-get install -y ruby ruby-dev rubygems build-essential
         sudo gem install --no-document fpm
