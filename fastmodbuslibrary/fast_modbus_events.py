@@ -8,11 +8,10 @@ class ModbusEventReader(ModbusCommon):
     """
 
     REQUEST_EVENTS_COMMAND = 0x10
-    COMMAND_EXTENDED = 0x46
     SUBCOMMAND_EVENT_TRANSMISSION = 0x11
     MIN_PACKET_LENGTH = 6
 
-    def __init__(self, device: str, baudrate: int):
+    def __init__(self, device: str, baudrate: int, ext_func_code: int = 0x46):
         """
         Initialize the ModbusEventReader instance with Modbus communication setup.
 
@@ -20,7 +19,7 @@ class ModbusEventReader(ModbusCommon):
             device (str): The serial device path (e.g., /dev/ttyUSB0).
             baudrate (int): The baud rate for the serial connection.
         """
-        super().__init__(device, baudrate)  # Initialize via the parent class ModbusCommon
+        super().__init__(device, baudrate, ext_func_code)  # Initialize via the parent class ModbusCommon
         self.logger = logging.getLogger(__name__)
 
     def parse_event_response(self, response: bytes):
@@ -37,7 +36,7 @@ class ModbusEventReader(ModbusCommon):
             self.logger.debug("Received packet is too short.")
             return {}
 
-        if response[1] != self.COMMAND_EXTENDED and response[2] != self.SUBCOMMAND_EVENT_TRANSMISSION:
+        if response[1] != self.ext_func_code and response[2] != self.SUBCOMMAND_EVENT_TRANSMISSION:
             self.logger.debug("Received packet is not an event transmission packet.")
             return {}
 
@@ -113,7 +112,7 @@ class ModbusEventReader(ModbusCommon):
         Returns:
             list: A list of dictionaries containing event information, or an empty dictionary if the request failed.
         """
-        request_command = struct.pack('>BBBBBBB', self.BROADCAST_ADDRESS, self.EXTENDED_FUNCTION_CODE,
+        request_command = struct.pack('>BBBBBBB', self.BROADCAST_ADDRESS, self.ext_func_code,
                                       self.REQUEST_EVENTS_COMMAND, min_slave_id, max_data_length, slave_id, flag)
         self.send_command(request_command)
 

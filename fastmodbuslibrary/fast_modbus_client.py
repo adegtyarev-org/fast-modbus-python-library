@@ -7,7 +7,7 @@ class ModbusClient(ModbusCommon):
     A class for interacting with Modbus devices using read and write commands.
     """
 
-    def __init__(self, device: str, baudrate: int):
+    def __init__(self, device: str, baudrate: int, ext_func_code: int = 0x46):
         """
         Initialize the ModbusClient instance.
 
@@ -15,7 +15,7 @@ class ModbusClient(ModbusCommon):
             device (str): The serial device path (e.g., /dev/ttyUSB0).
             baudrate (int): The baud rate for the serial connection.
         """
-        super().__init__(device, baudrate)
+        super().__init__(device, baudrate, ext_func_code)
         self.logger = logging.getLogger(__name__)
 
     def read_registers(self, serial_number: int, command: int, register: int, count: int = 1):
@@ -31,7 +31,7 @@ class ModbusClient(ModbusCommon):
         Returns:
             bytes: The data read from the registers, or None if the response is invalid.
         """
-        request_command = struct.pack('>BBBIBHH', self.BROADCAST_ADDRESS, self.EXTENDED_FUNCTION_CODE, 0x08, serial_number, command, register, count)
+        request_command = struct.pack('>BBBIBHH', self.BROADCAST_ADDRESS, self.ext_func_code, 0x08, serial_number, command, register, count)
         self.send_command(request_command)
 
         if self.wait_for_response():
@@ -57,7 +57,7 @@ class ModbusClient(ModbusCommon):
             bool: True if the write operation was successful, False otherwise.
         """
         register_count = len(values)
-        write_command = struct.pack('>BBBIBHHB', self.BROADCAST_ADDRESS, self.EXTENDED_FUNCTION_CODE, 0x08, serial_number, command, register, register_count, register_count * 2)
+        write_command = struct.pack('>BBBIBHHB', self.BROADCAST_ADDRESS, self.ext_func_code, 0x08, serial_number, command, register, register_count, register_count * 2)
         write_command += struct.pack(f'>{register_count}H', *values)
         self.send_command(write_command)
 
@@ -65,7 +65,7 @@ class ModbusClient(ModbusCommon):
             response = self.serial_port.read(256)
             self.logger.debug(f"RCV: {self.format_bytes(response)}")
             if self.check_crc(response):
-                expected_response = struct.pack('>BBBIBHH', self.BROADCAST_ADDRESS, self.EXTENDED_FUNCTION_CODE, 0x09, serial_number, command, register, register_count)
+                expected_response = struct.pack('>BBBIBHH', self.BROADCAST_ADDRESS, self.ext_func_code, 0x09, serial_number, command, register, register_count)
                 if response[:-2] == expected_response:
                     return True
                 else:

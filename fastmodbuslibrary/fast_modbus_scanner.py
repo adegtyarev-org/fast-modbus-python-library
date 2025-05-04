@@ -24,7 +24,7 @@ class ModbusScanner(ModbusCommon):
     MODEL_REQUEST_START_REGISTER = 200
     MODEL_REQUEST_REGISTER_COUNT = 20
 
-    def __init__(self, device: str, baudrate: int):
+    def __init__(self, device: str, baudrate: int, ext_func_code: int = 0x46):
         """
         Initialize the ModbusScanner instance.
 
@@ -32,7 +32,7 @@ class ModbusScanner(ModbusCommon):
             device (str): The serial device path (e.g., /dev/ttyUSB0).
             baudrate (int): The baud rate for the serial connection.
         """
-        super().__init__(device, baudrate)
+        super().__init__(device, baudrate, ext_func_code)
         self.logger = logging.getLogger(__name__)
 
     def request_device_model(self, serial_number: int) -> str:
@@ -48,7 +48,7 @@ class ModbusScanner(ModbusCommon):
         model_request = struct.pack(
             '>BBBIBHH',
             self.BROADCAST_ADDRESS,
-            self.EXTENDED_FUNCTION_CODE,
+            self.ext_func_code,
             0x08,
             serial_number,
             self.MODEL_REQUEST_FUNCTION_CODE,
@@ -69,7 +69,7 @@ class ModbusScanner(ModbusCommon):
         """
         Send a command to continue the scan.
         """
-        self.send_command(struct.pack('BBB', self.BROADCAST_ADDRESS, self.EXTENDED_FUNCTION_CODE, self.SCAN_CONTINUE_COMMAND))
+        self.send_command(struct.pack('BBB', self.BROADCAST_ADDRESS, self.ext_func_code, self.SCAN_CONTINUE_COMMAND))
 
     def scan_devices(self):
         """
@@ -78,10 +78,10 @@ class ModbusScanner(ModbusCommon):
         Returns:
             list: A list of dictionaries containing the serial number, Modbus ID, and model of each detected device.
         """
-        self.logger.info(f"Starting scan on port {self.device} with baudrate {self.baudrate} and scan command {hex(self.EXTENDED_FUNCTION_CODE)}...")
+        self.logger.info(f"Starting scan on port {self.device} with baudrate {self.baudrate} and scan command {hex(self.ext_func_code)}...")
 
         devices = []
-        self.send_command(struct.pack('BBB', self.BROADCAST_ADDRESS, self.EXTENDED_FUNCTION_CODE, self.SCAN_START_COMMAND))
+        self.send_command(struct.pack('BBB', self.BROADCAST_ADDRESS, self.ext_func_code, self.SCAN_START_COMMAND))
 
         while self.wait_for_response(2):
             response = self.serial_port.read(256)
