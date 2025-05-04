@@ -25,7 +25,8 @@ jobs:
         run: |
           VERSION=$(python setup.py --version | tr -d '[:space:]')
           echo "Current version: $VERSION"
-          echo "::set-output name=version::$VERSION"
+          # <-- вместо deprecated ::set-output
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
   
       - name: Check version against main
         run: |
@@ -97,11 +98,14 @@ jobs:
       id: build_package
       run: |
         version=${{ needs.check-version.outputs.current_version }}
-        echo "Building Debian package version $version..."
-        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
+        echo "Building Debian package version $version…"
+        fpm -s python -t deb \
+            --python-bin python3 \
+            --name fastmodbuslibrary \
+            --version "$version" \
+            .
+        echo "package_name=fastmodbuslibrary_${version}_all.deb" >> $GITHUB_OUTPUT
 
-        # Output the package name to use it in the release step
-        echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
 
     - name: Create Git Tag
       id: create_tag  # ID to pass the tag output to the release step
@@ -120,7 +124,7 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag -a "$version" -m "Release $version"
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$version" --force
-        echo "::set-output name=tag::$version"
+        echo "tag=$version" >> $GITHUB_OUTPUT
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
