@@ -22,13 +22,14 @@ jobs:
   
       - name: Get current version from setup.py
         id: get_version
+        shell: bash
         run: |
-          # Парсим версию напрямую из setup.py
-          VERSION=$(grep -Po "(?<=version=)['\"][^'\"]+" setup.py)
+          # выдираем из строки вида version='0.1.3' именно 0.1.3
+          VERSION=$(sed -nE "s/.*version *= *['\"]([^'\"]+)['\"].*/\1/p" setup.py)
           echo "Current version: $VERSION"
-          # Записываем в вывод шага
+          # записываем в стандартный механизм GitHub Actions
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-  
+
       - name: Check version against main
         run: |
           git fetch origin main
@@ -106,6 +107,10 @@ jobs:
             --version "$version" \
             .
         echo "package_name=fastmodbuslibrary_${version}_all.deb" >> $GITHUB_OUTPUT
+        echo "GITHUB_OUTPUT file is: $GITHUB_OUTPUT"
+        echo "Contents of GITHUB_OUTPUT:"
+        cat "$GITHUB_OUTPUT"
+
 
 
     - name: Create Git Tag
