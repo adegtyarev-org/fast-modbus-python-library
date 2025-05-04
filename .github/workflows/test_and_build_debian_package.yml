@@ -31,6 +31,8 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Check version against main
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
         run: |
           git fetch origin main
           MAIN_VERSION=$(git show origin/main:setup.py \
