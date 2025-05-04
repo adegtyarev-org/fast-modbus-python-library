@@ -62,9 +62,9 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install setuptools wheel
-        pip install -r requirements.txt
-        pip install pytest
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -r requirements.txt
+        python -m pip install pytest
 
     - name: Install Package in Editable Mode
       run: |
@@ -93,7 +93,7 @@ jobs:
 
     - name: Install Dependencies for Package Creation
       run: |
-        pip install setuptools wheel
+        python -m pip install --upgrade pip setuptools wheel
         sudo apt-get update
         sudo apt-get install -y ruby ruby-dev rubygems build-essential
         sudo gem install --no-document fpm
