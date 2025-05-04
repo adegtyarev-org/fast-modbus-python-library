@@ -23,9 +23,10 @@ jobs:
       - name: Get current version from setup.py
         id: get_version
         run: |
-          VERSION=$(python setup.py --version | tr -d '[:space:]')
+          # Парсим версию напрямую из setup.py
+          VERSION=$(grep -Po "(?<=version=)['\"][^'\"]+" setup.py)
           echo "Current version: $VERSION"
-          # <-- вместо deprecated ::set-output
+          # Записываем в вывод шага
           echo "version=$VERSION" >> $GITHUB_OUTPUT
   
       - name: Check version against main
