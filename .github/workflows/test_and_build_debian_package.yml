@@ -10,7 +10,7 @@ on:
       - '*'
 
 jobs:
-  check-version:
+  check_version:
     runs-on: self-hosted
     outputs:
       current_version: ${{ steps.get_version.outputs.version }}
@@ -45,7 +45,7 @@ jobs:
           
   test:
     runs-on: self-hosted
-    needs: check-version
+    needs: check_version
 
     steps:
     - name: Checkout repository
@@ -75,7 +75,7 @@ jobs:
 
   release:
     runs-on: self-hosted
-    needs: [check-version, test]
+    needs: [check_version, test]
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
     steps:
@@ -97,7 +97,7 @@ jobs:
     - name: Build Debian Package
       id: build_package
       run: |
-        version=${{ needs.check-version.outputs.current_version }}
+        version=${{ needs.check_version.outputs.current_version }}
         echo "Building Debian package version $version…"
         fpm -s python -t deb \
             --python-bin python3 \
@@ -113,12 +113,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          version="prv${{ needs.check-version.outputs.current_version }}"
+          version="prv${{ needs.check_version.outputs.current_version }}"
           # Delete existing tag if it exists
           git push --delete origin "$version" || true
           git tag -d "$version" || true
         else
-          version="v${{ needs.check-version.outputs.current_version }}"
+          version="v${{ needs.check_version.outputs.current_version }}"
         fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
