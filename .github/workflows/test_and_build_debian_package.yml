@@ -10,36 +10,44 @@ on:
       - '*'
 
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
+  check_version:
+    runs-on: self-hosted
     outputs:
       current_version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Check out code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
   
       - name: Get current version from setup.py
         id: get_version
+        shell: bash
         run: |
-          VERSION=$(python setup.py --version | tr -d '[:space:]')
+          # выдираем из строки вида version='0.1.3' именно 0.1.3
+          VERSION=$(sed -nE "s/.*version *= *['\"]([^'\"]+)['\"].*/\1/p" setup.py)
           echo "Current version: $VERSION"
-          echo "::set-output name=version::$VERSION"
-  
+          # записываем в стандартный механизм GitHub Actions
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Check version against main
         run: |
           git fetch origin main
-          MAIN_VERSION=$(git show origin/main:setup.py | grep -i 'version=' | head -n 1 | sed -E "s/.*version=['\"]([^'\"]+)['\"].*/\1/")
+          MAIN_VERSION=$(git show origin/main:setup.py \
+            | grep -i "version=" \
+            | head -n1 \
+            | sed -E "s/.*version=['\"]([^'\"]+)['\"].*/\1/")
           echo "Version in main branch: $MAIN_VERSION"
           echo "Version in current branch: ${{ steps.get_version.outputs.version }}"
-          if [ "${{ steps.get_version.outputs.version }}" == "$MAIN_VERSION" ]; then
+          if [ "${{ steps.get_version.outputs.version }}" = "$MAIN_VERSION" ]; then
             echo "Version has not changed in setup.py. Failing job."
             exit 1
           fi
           echo "Version has changed in setup.py. Proceeding."
-
+          
   test:
-    runs-on: ubuntu-latest
-    needs: check-version
+    runs-on: self-hosted
+    needs: check_version
 
     steps:
     - name: Checkout repository
@@ -68,8 +76,8 @@ jobs:
       run: pytest tests/
 
   release:
-    runs-on: ubuntu-latest
-    needs: [check-version, test]
+    runs-on: self-hosted
+    needs: [check_version, test]
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
     steps:
@@ -91,12 +99,19 @@ jobs:
     - name: Build Debian Package
       id: build_package
       run: |
-        version=${{ needs.check-version.outputs.current_version }}
-        echo "Building Debian package version $version..."
-        fpm -s python -t deb --python-bin python3 --name fastmodbuslibrary --version $version .
+        version=${{ needs.check_version.outputs.current_version }}
+        echo "Building Debian package version $version…"
+        fpm -s python -t deb \
+            --python-bin python3 \
+            --name fastmodbuslibrary \
+            --version "$version" \
+            .
+        echo "package_name=fastmodbuslibrary_${version}_all.deb" >> $GITHUB_OUTPUT
+        echo "GITHUB_OUTPUT file is: $GITHUB_OUTPUT"
+        echo "Contents of GITHUB_OUTPUT:"
+        cat "$GITHUB_OUTPUT"
 
-        # Output the package name to use it in the release step
-        echo "::set-output name=package_name::fastmodbuslibrary_${version}_all.deb"
+
 
     - name: Create Git Tag
       id: create_tag  # ID to pass the tag output to the release step
@@ -104,18 +119,18 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          version="prv${{ needs.check-version.outputs.current_version }}"
+          version="prv${{ needs.check_version.outputs.current_version }}"
           # Delete existing tag if it exists
           git push --delete origin "$version" || true
           git tag -d "$version" || true
         else
-          version="v${{ needs.check-version.outputs.current_version }}"
+          version="v${{ needs.check_version.outputs.current_version }}"
         fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag -a "$version" -m "Release $version"
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$version" --force
-        echo "::set-output name=tag::$version"
+        echo "tag=$version" >> $GITHUB_OUTPUT
 
     - name: Release on GitHub
       uses: softprops/action-gh-release@v1
