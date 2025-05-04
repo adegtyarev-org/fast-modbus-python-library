@@ -11,7 +11,7 @@ on:
 
 jobs:
   check-version:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       current_version: ${{ steps.get_version.outputs.version }}
     steps:
@@ -43,7 +43,7 @@ jobs:
           echo "Version has changed in setup.py. Proceeding."
           
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: check-version
 
     steps:
@@ -73,7 +73,7 @@ jobs:
       run: pytest tests/
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [check-version, test]
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
