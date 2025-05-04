@@ -8,10 +8,9 @@ class ModbusConfigEvents(ModbusCommon):
     A class to configure event notifications for multiple register ranges on a Modbus device.
     """
 
-    EXTENDED_FUNCTION_CODE = 0x46
     CONFIG_EVENTS_COMMAND = 0x18
 
-    def __init__(self, device: str, baudrate: int):
+    def __init__(self, device: str, baudrate: int, ext_func_code: int = 0x46 ):
         """
         Initialize the ModbusConfigEvents with the given parameters.
 
@@ -19,7 +18,7 @@ class ModbusConfigEvents(ModbusCommon):
             device (str): The serial device path (e.g., /dev/ttyACM0).
             baudrate (int): The baud rate for the connection.
         """
-        super().__init__(device, baudrate)
+        super().__init__(device, baudrate, ext_func_code)
         self.logger = logging.getLogger(__name__)
 
     def calculate_crc(self, data: bytes) -> int:
@@ -71,7 +70,7 @@ class ModbusConfigEvents(ModbusCommon):
         Returns:
             list: The generated command bytes.
         """
-        command = [slave_id, self.EXTENDED_FUNCTION_CODE, self.CONFIG_EVENTS_COMMAND]
+        command = [slave_id, self.ext_func_code, self.CONFIG_EVENTS_COMMAND]
         data = []
 
         reg_type_byte = {
